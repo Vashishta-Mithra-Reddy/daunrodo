@@ -1,7 +1,9 @@
 // lib/utils.ts
 export function validateInstagramUrl(url: string): boolean {
+  // Strip everything after the question mark (tracking data)
+  const cleanUrl = url.split('?')[0];
   const instagramReelPattern = /^https:\/\/(www\.)?instagram\.com\/(reel|p|reels)\/[A-Za-z0-9_-]+\/?$/;
-  return instagramReelPattern.test(url);
+  return instagramReelPattern.test(cleanUrl);
 }
 
 export function extractHashtags(text: string): string[] {
