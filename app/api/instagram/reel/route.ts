@@ -24,19 +24,33 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { url } = body;
 
+    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app/'];
+    const origin = request.headers.get('origin');
+    const headers = new Headers();
+    headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (origin && allowedOrigins.includes(origin)) {
+      headers.set('Access-Control-Allow-Origin', origin);
+    } else {
+      // Fallback for origins not explicitly allowed, or if origin header is missing
+      // You might want to handle this more strictly based on your security requirements
+      headers.set('Access-Control-Allow-Origin', allowedOrigins[0]); // Default to first allowed origin
+    }
+
     // Validate input
     if (!url || typeof url !== 'string') {
-      return NextResponse.json(
-        { error: 'Missing or invalid url parameter' },
-        { status: 400 }
-      );
+      return new NextResponse(JSON.stringify({ error: 'Missing or invalid url parameter' }), {
+        status: 400,
+        headers: headers,
+      });
     }
 
     if (!validateInstagramUrl(url)) {
-      return NextResponse.json(
-        { error: 'Invalid Instagram Reel URL' },
-        { status: 400 }
-      );
+      return new NextResponse(JSON.stringify({ error: 'Invalid Instagram Reel URL' }), {
+        status: 400,
+        headers: headers,
+      });
     }
 
     // Step 1: Fetch Reel data using working method
@@ -44,10 +58,10 @@ export async function POST(request: NextRequest) {
     const reelData = await scraper.fetchReel(url);
 
     if (!reelData) {
-      return NextResponse.json(
-        { error: 'Reel not found or inaccessible' },
-        { status: 404 }
-      );
+      return new NextResponse(JSON.stringify({ error: 'Reel not found or inaccessible' }), {
+        status: 404,
+        headers: headers,
+      });
     }
 
     let transcript = '';
@@ -85,14 +99,27 @@ export async function POST(request: NextRequest) {
       }
     };
 
-    return NextResponse.json(response);
+    return new NextResponse(JSON.stringify(response), {
+      status: 200,
+      headers: headers,
+    });
 
   } catch (error) {
     console.error('API Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    const headers = new Headers();
+    headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+    headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app/'];
+    const origin = request.headers.get('origin');
+    if (origin && allowedOrigins.includes(origin)) {
+      headers.set('Access-Control-Allow-Origin', origin);
+    } else {
+      headers.set('Access-Control-Allow-Origin', allowedOrigins[0]);
+    }
+    return new NextResponse(JSON.stringify({ error: 'Internal server error' }), {
+      status: 500,
+      headers: headers,
+    });
   }
 }
 
