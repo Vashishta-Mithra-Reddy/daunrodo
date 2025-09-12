@@ -18,9 +18,15 @@ export class TranscriptionService {
 
     try {
       const formData = new FormData();
-      const audioFile = new File([audioBuffer], 'audio.mp3', { type: 'audio/mp3' });
       
-      formData.append('file', audioFile);
+      // FIX: The original code used `new File([audioBuffer], ...)` which causes a type error.
+      // This is because the Web API's `File` constructor isn't directly compatible
+      // with the Node.js `Buffer` type.
+      // The correct approach is to first create a `Blob` from the buffer and then
+      // use the `FormData.append()` method that accepts a Blob and a filename.
+      const audioBlob = new Blob([audioBuffer], { type: 'audio/mp3' });
+      formData.append('file', audioBlob, 'audio.mp3');
+      
       formData.append('model', 'whisper-1');
       formData.append('language', 'en'); // Auto-detect or specify
 
@@ -33,7 +39,9 @@ export class TranscriptionService {
       });
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.statusText}`);
+        // Provide more detailed error info from the API response
+        const errorBody = await response.text();
+        throw new Error(`OpenAI API error: ${response.statusText} - ${errorBody}`);
       }
 
       const result = await response.json();
@@ -45,7 +53,8 @@ export class TranscriptionService {
 
     } catch (error) {
       console.error('Transcription error:', error);
-      throw new Error(`Failed to transcribe audio: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to transcribe audio: ${errorMessage}`);
     }
   }
 
