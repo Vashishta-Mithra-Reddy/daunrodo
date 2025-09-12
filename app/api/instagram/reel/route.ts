@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { url } = body;
 
-    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app'];
+    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app','https://saramsha.vercel.app','https://saramsham.vercel.app'];
     const origin = request.headers.get('origin');
     const headers = new Headers();
     headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     const headers = new Headers();
     headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app'];
+    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app', 'https://saramsha.vercel.app', 'https://saramsham.vercel.app'];
     const origin = request.headers.get('origin');
     if (origin && allowedOrigins.includes(origin)) {
       headers.set('Access-Control-Allow-Origin', origin);
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function OPTIONS(request: NextRequest) {
-  const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app'];
+  const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app', 'https://saramsha.vercel.app', 'https://saramsham.vercel.app'];
   const origin = request.headers.get('origin');
 
   const headers = new Headers();
