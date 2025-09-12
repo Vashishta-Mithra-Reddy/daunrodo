@@ -19,12 +19,12 @@ export class TranscriptionService {
     try {
       const formData = new FormData();
       
-      // FIX: The original code used `new File([audioBuffer], ...)` which causes a type error.
-      // This is because the Web API's `File` constructor isn't directly compatible
-      // with the Node.js `Buffer` type.
-      // The correct approach is to first create a `Blob` from the buffer and then
-      // use the `FormData.append()` method that accepts a Blob and a filename.
-      const audioBlob = new Blob([audioBuffer], { type: 'audio/mp3' });
+      // FINAL FIX: Explicitly convert the Node.js Buffer to a Uint8Array.
+      // While Node's Buffer is technically a subclass of Uint8Array, TypeScript's
+      // type definitions can be strict. This conversion creates a standard
+      // Uint8Array that is guaranteed to be compatible with the Blob constructor's
+      // expected `BlobPart` type, fully resolving the error.
+      const audioBlob = new Blob([new Uint8Array(audioBuffer)], { type: 'audio/mp3' });
       formData.append('file', audioBlob, 'audio.mp3');
       
       formData.append('model', 'whisper-1');
