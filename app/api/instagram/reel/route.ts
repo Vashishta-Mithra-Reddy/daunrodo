@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { url } = body;
 
-    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app/'];
+    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app'];
     const origin = request.headers.get('origin');
     const headers = new Headers();
     headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     const headers = new Headers();
     headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
     headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app/'];
+    const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app'];
     const origin = request.headers.get('origin');
     if (origin && allowedOrigins.includes(origin)) {
       headers.set('Access-Control-Allow-Origin', origin);
@@ -121,5 +121,23 @@ export async function POST(request: NextRequest) {
       headers: headers,
     });
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  const allowedOrigins = ['http://localhost:5678', 'https://saransha.vercel.app'];
+  const origin = request.headers.get('origin');
+
+  const headers = new Headers();
+  headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  headers.set('Access-Control-Max-Age', '86400'); // Cache preflight for 24 hours
+
+  if (origin && allowedOrigins.includes(origin)) {
+    headers.set('Access-Control-Allow-Origin', origin);
+  } else {
+    headers.set('Access-Control-Allow-Origin', allowedOrigins[0]);
+  }
+
+  return new NextResponse(null, { status: 204, headers: headers });
 }
 
