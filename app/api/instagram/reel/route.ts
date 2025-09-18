@@ -9,6 +9,7 @@ export interface ReelResponse {
   instagram_url: string;
   caption: string;
   transcript: string;
+  videoUrl: string;
   metadata: {
     author: string;
     hashtags: string[];
@@ -89,6 +90,7 @@ export async function POST(request: NextRequest) {
       instagram_url: url,
       caption: reelData.caption,
       transcript: transcript,
+      videoUrl: reelData.videoUrl, 
       metadata: {
         author: reelData.author,
         hashtags: reelData.hashtags,
