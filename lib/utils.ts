@@ -23,3 +23,30 @@ export function getInstagramIdFromUrl(url: string): string | null {
   const match = url.match(regex);
   return match && match[2] ? match[2] : null;
 }
+
+export function getCorsHeaders(requestOrigin: string | null): Headers {
+  const defaultAllowedOrigins = [
+    'http://localhost:5678',
+    'https://saransha.vercel.app',
+    'https://saramsha.vercel.app',
+    'https://saramsham.vercel.app'
+  ];
+
+  const envOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()) 
+    : [];
+    
+  const allowedOrigins = [...defaultAllowedOrigins, ...envOrigins];
+
+  const headers = new Headers();
+  headers.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    headers.set('Access-Control-Allow-Origin', requestOrigin);
+  } else {
+    headers.set('Access-Control-Allow-Origin', allowedOrigins[0]);
+  }
+
+  return headers;
+}

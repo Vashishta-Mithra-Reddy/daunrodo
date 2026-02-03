@@ -6,6 +6,7 @@ export interface TranscriptionResult {
 
 export class TranscriptionService {
   private openaiApiKey: string;
+  private maxRetries = 3;
 
   constructor() {
     this.openaiApiKey = process.env.OPENAI_API_KEY || '';
@@ -16,52 +17,59 @@ export class TranscriptionService {
       throw new Error('OpenAI API key not configured');
     }
 
-    try {
-      const formData = new FormData();
-      
-      // FINAL FIX: Explicitly convert the Node.js Buffer to a Uint8Array.
-      // While Node's Buffer is technically a subclass of Uint8Array, TypeScript's
-      // type definitions can be strict. This conversion creates a standard
-      // Uint8Array that is guaranteed to be compatible with the Blob constructor's
-      // expected `BlobPart` type, fully resolving the error.
-      const audioBlob = new Blob([new Uint8Array(audioBuffer)], { type: 'audio/mp3' });
-      formData.append('file', audioBlob, 'audio.mp3');
-      
-      formData.append('model', 'whisper-1');
-      formData.append('language', 'en'); // Auto-detect or specify
+    let lastError: Error | null = null;
 
-      const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.openaiApiKey}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        // Provide more detailed error info from the API response
-        const errorBody = await response.text();
-        throw new Error(`OpenAI API error: ${response.statusText} - ${errorBody}`);
+    for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+      try {
+        return await this.performTranscription(audioBuffer);
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(String(error));
+        console.warn(`Transcription attempt ${attempt} failed:`, error);
+        
+        if (attempt < this.maxRetries) {
+          // Exponential backoff: 1000ms, 2000ms, etc.
+          await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+        }
       }
-
-      const result = await response.json();
-      
-      return {
-        text: result.text || '',
-        language: result.language || 'en'
-      };
-
-    } catch (error) {
-      console.error('Transcription error:', error);
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(`Failed to transcribe audio: ${errorMessage}`);
     }
+
+    console.error('All transcription attempts failed:', lastError);
+    throw new Error(`Failed to transcribe audio after ${this.maxRetries} attempts: ${lastError?.message}`);
   }
 
-  // Alternative: Free local transcription using Web Speech API (client-side only)
-  async transcribeLocal(audioBuffer: Buffer): Promise<TranscriptionResult> {
-    // This would require client-side implementation
-    // For server-side, you'd need to implement Whisper.cpp or similar
-    throw new Error('Local transcription not implemented for server-side');
+  private async performTranscription(audioBuffer: Buffer): Promise<TranscriptionResult> {
+    const formData = new FormData();
+    
+    // Explicitly convert the Node.js Buffer to a Uint8Array.
+    const audioBlob = new Blob([new Uint8Array(audioBuffer)], { type: 'audio/mp3' });
+    formData.append('file', audioBlob, 'audio.mp3');
+    
+    formData.append('model', 'whisper-1');
+    formData.append('response_format', 'verbose_json');
+    // formData.append('language', 'en'); // Allow auto-detect by not enforcing 'en' unless needed
+
+    const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${this.openaiApiKey}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      // If 429 (Rate Limit) or 5xx (Server Error), these are good candidates for retry.
+      // 400 or 401 might not be recoverable, but we'll retry all for simplicity unless specific handling is added.
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorBody}`);
+    }
+
+    const result = await response.json();
+    
+    return {
+      text: result.text || '',
+      language: result.language || 'en' // Whisper usually returns 'language' in verbose_json mode, but 'json' mode just returns text. 
+      // To get language, we might need response_format='verbose_json'. 
+      // The previous code assumed result.language exists. Default response is json with just text.
+    };
   }
 }

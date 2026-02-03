@@ -1,6 +1,6 @@
 // app/api/instagram/reel/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { InstagramScraper } from '@/lib/instagram-scraper';
+import { InstagramScraper } from '@/lib/scrapers/instagram';
 import { AudioExtractor } from '@/lib/audio-extractor';
 import { TranscriptionService } from '@/lib/transcription-service';
 import { validateInstagramUrl } from '@/lib/utils';
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Fetch Reel data using working method
     const scraper = new InstagramScraper();
-    const reelData = await scraper.fetchReel(url);
+    const reelData = await scraper.scrape(url);
 
     if (!reelData) {
       return new NextResponse(JSON.stringify({ error: 'Reel not found or inaccessible' }), {
@@ -88,13 +88,13 @@ export async function POST(request: NextRequest) {
     // Step 4: Assemble response
     const response: ReelResponse = {
       instagram_url: url,
-      caption: reelData.caption,
+      caption: reelData.caption || '',
       transcript: transcript,
-      videoUrl: reelData.videoUrl, 
+      videoUrl: reelData.videoUrl || '', 
       metadata: {
-        author: reelData.author,
-        hashtags: reelData.hashtags,
-        duration_seconds: reelData.duration,
+        author: reelData.author || '',
+        hashtags: reelData.hashtags || [],
+        duration_seconds: reelData.duration || 0,
         language: detectedLanguage,
         view_count: reelData.viewCount,
         like_count: reelData.likeCount,
