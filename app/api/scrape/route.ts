@@ -10,6 +10,10 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, { status: 200, headers });
 }
 
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ message: "v19's playground scraper route" });
+}
+
 export async function POST(request: NextRequest) {
   // CORS setup
   const origin = request.headers.get('origin');
