@@ -46,7 +46,7 @@ export class TranscriptionService {
     
     formData.append('model', 'whisper-1');
     formData.append('response_format', 'verbose_json');
-    // formData.append('language', 'en'); // Allow auto-detect by not enforcing 'en' unless needed
+    formData.append('language', 'en'); // Allow auto-detect by not enforcing 'en' unless needed
 
     const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
       method: 'POST',
