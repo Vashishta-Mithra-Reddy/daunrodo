@@ -13,13 +13,24 @@ export class YoutubeScraper implements Scraper {
         return null;
       }
 
-      const info = await ytdl.getInfo(url);
-      
-      // Get best format with audio and video if possible
-      // prioritize mp4 for compatibility
-      const formats = ytdl.filterFormats(info.formats, 'audioandvideo');
-      const format = formats.find(f => f.container === 'mp4') || formats[0] || ytdl.chooseFormat(info.formats, { quality: 'highest' });
-      
+      const info = await ytdl.getInfo(url, {
+        requestOptions: {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9'
+          }
+        }
+      });
+
+      const avFormats = ytdl.filterFormats(info.formats, 'audioandvideo');
+      const avFormat = avFormats.find(f => f.container === 'mp4') || avFormats[0];
+      const audioFormat = ytdl.chooseFormat(info.formats, { quality: 'highestaudio', filter: 'audioonly' });
+      const format = avFormat || audioFormat;
+
+      if (!format?.url) {
+        return null;
+      }
+
       return {
         url: url,
         videoUrl: format.url,
